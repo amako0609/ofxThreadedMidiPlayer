@@ -17,18 +17,21 @@
 
 using namespace jdksmidi;
 
-class ofxThreadedMidiPlayer: public ofThread{
+class ofxThreadedMidiPlayer: public ofThread
+{
 public:
     int count;
     bool isReady;
     string midiFileName;
     int midiPort;
-    float currentTime;
-    float nextEventTime;
+    unsigned lastMessageMillis;
+    //float currentTime;
+    //float nextEventTime;
     
-    double musicDurationInSeconds;
-    float max_time;
-    long myTime;
+    //double musicDurationInSeconds;
+    //float max_time;
+    //long myTime;
+    //float startTimeMs;
     bool doLoop;
     
     MIDIMultiTrack *tracks;
@@ -51,8 +54,7 @@ public:
     ofxMidiEvent midiEvent;
     
 protected:
-    void dispatchMidiEvent(float currentTime, float timeDelta, vector<unsigned char>& message);
-    bool bIsInited;
-    
     void init();
+    void dispatchMidiEvent(vector<unsigned char>& message);
+    bool bIsInited;
 };
