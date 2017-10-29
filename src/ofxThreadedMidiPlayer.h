@@ -40,7 +40,6 @@ public:
     
     RtMidiOut *midiout;
     
-    
     ofxThreadedMidiPlayer();
     ~ofxThreadedMidiPlayer();
     void stop();
@@ -50,7 +49,12 @@ public:
     void setup(string fileName, int portNumber, bool shouldLoop = true);
     void threadedFunction();
     void clean();
+    void DumpTrackNames();
+    float getBpm();
     
+    bool setBpm(float bpm);
+    void goToZero();
+
     ofxMidiEvent midiEvent;
     
 protected:

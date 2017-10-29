@@ -68,6 +68,7 @@ void ofxThreadedMidiPlayer::setup(string fileName, int portNumber, bool shouldLo
     midiPort = portNumber;
     doLoop = shouldLoop;
     clean();
+    init();
 }
 
 void ofxThreadedMidiPlayer::dispatchMidiEvent(vector<unsigned char>& message)
@@ -180,6 +181,55 @@ void ofxThreadedMidiPlayer::clean(){
         midiout = NULL;
     }
     bIsInited = false;
+}
+
+void ofxThreadedMidiPlayer::DumpTrackNames ()
+{
+    fprintf ( stdout, "TEMPO = %f\n",
+             sequencer->GetTrackState ( 0 )->tempobpm
+             );
+    
+    for ( int i = 0; i < sequencer->GetNumTracks(); ++i )
+    {
+        fprintf ( stdout, "TRK #%2d : NAME = '%s'\n",
+                 i,
+                 sequencer->GetTrackState ( i )->track_name
+                 );
+    }
+}
+
+float ofxThreadedMidiPlayer::getBpm(){
+    float bpm = -1.0f;
+    if(sequencer){
+        MIDISequencerState *state = sequencer->GetState();
+        if(state)
+            cout << state->num_tracks << endl;
+        for(size_t i=0; i<state->num_tracks; i++){
+            if(state->track_state[i]){
+                bpm = state->track_state[i]->tempobpm;
+            }
+        }
+    }
+    return bpm;
+}
+
+bool ofxThreadedMidiPlayer::setBpm(float bpm){
+    if(!sequencer){
+        return false;
+    }
+    
+    MIDISequencerState *state = sequencer->GetState();
+    if(state)
+        for(size_t i=0; i<state->num_tracks; i++){
+            if(state->track_state[i]){
+                state->track_state[i]->tempobpm = bpm;
+            }
+        }
+    return true;
+}
+
+void ofxThreadedMidiPlayer::goToZero(){
+    sequencer->GoToZero();
 }
 
 void ofxThreadedMidiPlayer::init()
