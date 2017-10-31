@@ -20,6 +20,12 @@ ofxThreadedMidiPlayer::ofxThreadedMidiPlayer(){
     doLoop = false;
     isReady = true;
     bIsInited = false;
+#ifdef USE_FRAMECOUNT_MANAGER
+        //        drum.setGetTimeMillis([](){return static_cast<uint64_t>($Context(FrameCountManager)->getCurrentTime()*1000.0);});
+        getTimeMillis = [](){return static_cast<uint64_t>($Context(FrameCountManager)->getCurrentTime()*1000.0);};
+#else
+        getTimeMillis = ofGetElapsedTimeMillis;
+#endif
 }
 ofxThreadedMidiPlayer::~ofxThreadedMidiPlayer(){
     cout << __PRETTY_FUNCTION__ << endl;
@@ -86,7 +92,7 @@ void ofxThreadedMidiPlayer::dispatchMidiEvent(vector<unsigned char>& message)
         midiMessage.channel = (int) (message.at(0) & 0x0F)+1;
     }
     
-    unsigned currentMillis = ofGetElapsedTimeMillis();
+    unsigned currentMillis = getTimeMillis();
     midiMessage.deltatime = currentMillis - lastMessageMillis;// deltatime;// * 1000; // convert s to ms
     lastMessageMillis = currentMillis;
     midiMessage.portNum = midiPort;
@@ -125,16 +131,23 @@ void ofxThreadedMidiPlayer::threadedFunction()
 {
     do
     {
-        init();
         
-        unsigned startTimeMillis = ofGetElapsedTimeMillis();
+//        unsigned startTimeMillis = ofGetElapsedTimeMillis();
         
         if (sequencer)
         {
             float nextEventMs;
             while (isThreadRunning() && sequencer->GetNextEventTimeMs(&nextEventMs))
             {
-                if (ofGetElapsedTimeMillis() - startTimeMillis > nextEventMs)
+
+                if(!$Context(FrameCountManager)->isPlaying()
+                   &&
+                   sequencer->GetCurrentTimeInMs() != 0){
+                    goToZero();
+                }
+                if (getTimeMillis() > nextEventMs)
+
+//                if (ofGetElapsedTimeMillis() - startTimeMillis > nextEventMs)
                 {
                     MIDITimedBigMessage bigMessage;
                     int track;
@@ -210,6 +223,7 @@ float ofxThreadedMidiPlayer::getBpm(){
             }
         }
     }
+    this->bpm = bpm;
     return bpm;
 }
 
@@ -219,17 +233,23 @@ bool ofxThreadedMidiPlayer::setBpm(float bpm){
     }
     
     MIDISequencerState *state = sequencer->GetState();
-    if(state)
+    if(state){
         for(size_t i=0; i<state->num_tracks; i++){
             if(state->track_state[i]){
                 state->track_state[i]->tempobpm = bpm;
             }
         }
+        this->bpm = bpm;
+    }
     return true;
 }
 
 void ofxThreadedMidiPlayer::goToZero(){
+    if(!sequencer){
+        return false;
+    }
     sequencer->GoToZero();
+    setBpm(bpm);
 }
 
 void ofxThreadedMidiPlayer::init()
