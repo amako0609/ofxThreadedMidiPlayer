@@ -156,6 +156,7 @@ void ofxThreadedMidiPlayer::threadedFunction()
                         }
                     }
                 }
+                sleep(1);
             }
         }
     }
